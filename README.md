@@ -78,9 +78,10 @@ cd k8s-deployment-strategies
 # Install Argo Rollouts
 ./scripts/install-argo-rollouts.sh
 Requires sudo. If you want to view the dashboard, leave this session open and continue with the following commands in a new one. http://localhost:3100/rollouts
+```
 ![Main](image-1.png)
 ![Deploy Example](image.png)
-```
+
 
 ### 2. Build Application Images
 
