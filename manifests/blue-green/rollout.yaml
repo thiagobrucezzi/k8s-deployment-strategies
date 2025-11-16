@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: blue-green-belo
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: blue-green-belo
+  template:
+    metadata:
+      labels:
+        app: blue-green-belo
+    spec:
+      containers:
+      - name: web-app
+        image: belo:blue
+        ports:
+        - containerPort: 5000
+  strategy:
+    blueGreen:
+      activeService: blue-green-active
+      previewService: blue-green-preview
+      autoPromotionEnabled: false

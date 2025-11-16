@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: canary-belo
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: canary-belo
+  template:
+    metadata:
+      labels:
+        app: canary-belo
+    spec:
+      containers:
+      - name: web-app
+        image: belo:blue
+        ports:
+        - containerPort: 5000
+  strategy:
+    canary:
+      canaryService: canary-canary
+      stableService: canary-stable
+      steps:
+      - pause: {}
+      - setWeight: 10
+      - pause: {}
+      - setWeight: 25
+      - pause: {}
+      - setWeight: 50
+      - pause: {}
+      - setWeight: 100
