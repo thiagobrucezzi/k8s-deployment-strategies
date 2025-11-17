@@ -71,7 +71,7 @@ k8s-deployment-strategies/
         ```
 - **Kubernetes Cluster**
 - **kubectl** configured to access your cluster (minikube v1.37.0)
-- **Docker** for building images (Docker Desktop v4.51.0)
+- **Docker** for building images (Docker Desktop v4.51.0 or docker.io)
 - **curl** for testing endpoints
 
 ## 🚀 Quick Start
