@@ -51,14 +51,24 @@ k8s-deployment-strategies/
 │   ├── deploy-canary.sh           # Canary deployment automation
 │   ├── run-k6-tests.sh            # Load testing execution
 │   └── nuke-everything.sh         # Complete environment cleanup
-├── image-1.png                    # ExampleArgo2
-├── image.png                      # ExampleArgo1
+├── dashboard.png                  # ExampleArgo1 dashboard
+├── deploy.png                     # ExampleArgo2 a canary deployment
+├── devops-challenge-belo.pdf      # Pdf with requirements
+├── page.png                       # Page1
+├── page2.png                      # Page2
 └── README.md                      # Project documentation and guide
 ```
 
 ## 📋 Prerequisites
 
 - **Ubuntu 24.04** it works with WSL as well
+    - For WSL Usage: When Git on Windows clones a repository, it automatically converts line endings to CRLF
+        ```bash
+        cd k8s-deployment-strategies/
+        sudo apt update
+        sudo apt install dos2unix
+        find . -type f -name "*.sh" -exec dos2unix {} \;
+        ```
 - **Kubernetes Cluster**
 - **kubectl** configured to access your cluster (minikube v1.37.0)
 - **Docker** for building images (Docker Desktop v4.51.0)
@@ -79,8 +89,8 @@ cd k8s-deployment-strategies
 ./scripts/install-argo-rollouts.sh
 Requires sudo. If you want to view the dashboard, leave this session open and continue with the following commands in a new one. http://localhost:3100/rollouts
 ```
-![Main](image-1.png)
-![Deploy Example](image.png)
+![Main](dashboard.png)
+![Deploy Example](deploy.png)
 
 
 ### 2. Build Application Images
@@ -133,15 +143,15 @@ kubectl argo rollouts set image blue-green-belo web-app=belo:green
 kubectl argo rollouts promote blue-green-belo
 ```
 
-**Manual Testing:**
+**Testing Blue-Green Traffic:**
 ```bash
 # Test active service (production)
 kubectl port-forward svc/blue-green-active 8080:80
-curl http://localhost:8080/api
+curl http://localhost:8080/version
 
 # Test preview service (new version)
 kubectl port-forward svc/blue-green-preview 8081:80
-curl http://localhost:8081/api
+curl http://localhost:8081/version
 ```
 
 ### Canary Deployment
@@ -168,19 +178,26 @@ kubectl argo rollouts promote canary-belo
 ```bash
 # Test active service (production)
 kubectl port-forward svc/canary-stable 8080:80
-curl http://localhost:8080/api
+curl http://localhost:8080/version
 
 # Test preview service (new version)
 kubectl port-forward svc/canary-canary 8081:80
-curl http://localhost:8081/api
+curl http://localhost:8081/version
 
+# Test service (User view)
 kubectl port-forward svc/service-canary 8082:80
-curl http://localhost:8082/api
+curl http://localhost:8082/version
 
 # For accurate traffic distribution testing, use internal cluster access:
 # This is what users would “see.” As the green version is promoted, traffic will be redirected to different pods. And depending on the migration percentage, more or fewer users will see the new version.
 kubectl run -it --rm test --image=curlimages/curl --     sh -c 'for i in $(seq 1 20); do curl -s http://service-canary/api; sleep 1; done'
 ```
+
+**After execute commands you will able to see both versions, stable - active & preview - canary**
+
+![active](page.png)
+
+![alt text](pagev2.png)
 
 ## 🧪 Load Testing
 
@@ -323,10 +340,11 @@ kubectl delete namespace argo-rollouts
 - [Argo Rollouts](https://argoproj.github.io/rollouts/) for advanced deployment capabilities
 - [k6](https://k6.io/) for load testing infrastructure
 - Kubernetes community for excellent documentation
+- [minikube](https://minikube.sigs.k8s.io/docs/)
 
 ## 🚀 Future Enhancements & Roadmap
 
-### Proposed Improvements
+### Proposed Improvements - On a possible new Ver
 
 **GitOps Implementation with ArgoCD**
 - Implement **ArgoCD** for declarative, GitOps-based continuous delivery
@@ -340,6 +358,14 @@ kubectl delete namespace argo-rollouts
 - Streamline configuration versioning and management
 - Leverage native compatibility with ArgoCD for seamless deployments
 
+**Enhanced Observability with Prometheus & Grafana**
+- Integrate **Prometheus** for centralized metric collection across all Kubernetes workloads
+- Implement **Grafana dashboards** to visualize application performance, traffic distribution, and system health in real time
+- Monitor **load-testing results (k6)**, including latency, throughput, error rates, and canary/stable traffic split
+- Establish alerting rules for critical performance thresholds (e.g., high latency, elevated error rates, abnormal traffic routing)
+- Enable deeper analysis of deployment strategies (Canary / Blue-Green) using time-series metrics and per-pod insights
+- Provide developers and operators with actionable observability to validate rollout behavior and ensure stable production releases
+
 ### Expected Benefits ✅
 
 - **True GitOps Workflow**: Git as the single source of truth for both application and infrastructure code
@@ -347,14 +373,40 @@ kubectl delete namespace argo-rollouts
 - **Simplified Rollbacks**: Quick revert to previous states using Git history
 - **Environment Consistency**: Identical deployment processes across all environments
 - **Reduced Configuration Drift**: Automated synchronization prevents manual changes
+- **Improved Visibility & Diagnostics:** Prometheus and Grafana provide real-time metrics for rollout behavior, service health, and traffic distribution
+- **Data-Driven Release Validation:** Canary and Blue-Green deployments can be validated using concrete performance metrics (latency, throughput, error rates)
+- **Faster Issue Detection:** Alerts and dashboards surface anomalies early, reducing MTTR (Mean Time to Recovery)
 
 ### Technical Integration
 
 ```
-Git Repository → ArgoCD (GitOps Controller) → Kustomize (Manifest Customization)
-               → Argo Rollouts (Progressive Delivery) → Kubernetes Cluster
+                     Git Repository
+                           │
+                           ▼
+                 ArgoCD (GitOps Controller)
+                           │
+                           ▼
+              Kustomize (Manifest Customization)
+                           │
+                           ▼
+        Argo Rollouts (Progressive Delivery Engine)
+                           │
+                           ▼
+                    Kubernetes Cluster
+                           │
+           ┌───────────────┴────────────────┐
+           │                                │
+           ▼                                ▼
+Application Pods                  Metrics Exporters
+(Blue/Green, Canary)    (Pod / Node / Rollout Metrics)
+                                            │
+                                            ▼
+                                Prometheus (Metrics Collection)
+                                            │
+                                            ▼
+                         Grafana (Dashboards & Traffic Visualization)
 ```
 
 ---
-### **Happy Deploying!** 🚀
----
+## Thanks a lot for read and try all! Happy Deploying! 🚀
+*Cheers Thiago!*
